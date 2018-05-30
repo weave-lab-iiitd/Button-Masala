@@ -1,0 +1,66 @@
+import zbar
+import numpy as np
+import numpy as np
+from matplotlib import pyplot as plt
+from matplotlib import animation
+from PIL import Image
+import cv2
+import pyzbar.pyzbar as pyzbar
+import numpy as np
+import cv2
+
+def main():
+
+
+
+    capture = cv2.VideoCapture(0)
+
+    while True:
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+        ret, frame = capture.read()
+        resize = cv2.resize(frame, (1550, 850));
+
+        cv2.imshow('Current',resize)
+
+        gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
+
+        image = Image.fromarray(gray)
+        width, height = image.size
+        zbar_image = zbar.Image(width, height, 'Y800', image.tobytes())
+
+
+        scanner = zbar.ImageScanner()
+        scanner.scan(zbar_image)
+
+        for decoded in zbar_image:
+            points=decoded.location
+            print(decoded.data)
+            if len(points) > 4:
+                hull = cv2.convexHull(np.array([point for point in points], dtype=np.float32))
+                hull = list(map(tuple, np.squeeze(hull)))
+            else:
+                hull = points;
+            n = len(hull)
+            for j in range(0, n):
+                cv2.line(frame, hull[j], hull[(j + 1) % n], (255, 0, 0), 3)
+        frame = cv2.resize(frame, (1200, 400));
+        for decoded in zbar_image:
+            points=decoded.location
+
+            ll=[point for point in points]
+
+            x1=min(ll[0][0],ll[1][0],ll[2][0],ll[3][0])#top-left pt. is the leftmost of the 4 points
+            x2=max(ll[0][0],ll[1][0],ll[2][0],ll[3][0])#bottom-right pt. is the rightmost of the 4 points
+            y1=min(ll[0][1],ll[1][1],ll[2][1],ll[3][1])#top-left pt. is the uppermost of the 4 points
+            y2=max(ll[0][1],ll[1][1],ll[2][1],ll[3][1])#bottom-right pt. is the lowermost of the 4 points
+
+            #print("coordinates")
+            #cv2.rectangle(frame, (x2, y2), (x1 , y1), (255, 255, 255), 2)
+
+        cv2.imshow("Results", frame);
+
+
+if __name__ == "__main__":
+    main()

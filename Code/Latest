@@ -7,8 +7,9 @@ import pyzbar.pyzbar as pyzbar
 import numpy as np
 import  urllib
 import imutils
-import math
 from math import atan2
+
+import math
 import random
 from collections import deque
 from imutils.video import VideoStream
@@ -30,7 +31,7 @@ def getangle(x1,y1,x2,y2,x3,y3):
     # bc = c - b
     # cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
     # angle = np.arccos(cosine_angle)
-    return (result)  # np.degrees(angle)
+    return (result)
 greenLower = (29, 86, 6)
 greenUpper = (64, 255, 255)
 ap = argparse.ArgumentParser()
@@ -46,6 +47,8 @@ pts = deque(maxlen=args["buffer"])
 
 (dX, dY) = (0, 0)
 direction = ""
+
+
 
 def find_centre(points):
 	meanx=0
@@ -67,6 +70,7 @@ def Zoom(objj, size):
 def main():
     hist = {}
     q = []
+    ppp={}
     counter = 0
     pts = deque(maxlen=args["buffer"])
 
@@ -80,7 +84,7 @@ def main():
     direction = ""
     conn=[]
     counti = 0
-    capture = cv2.VideoCapture('http://192.168.169.3:4745/mjpegfeed?1000x1080')
+    capture = cv2.VideoCapture('http://192.168.1.33:4745/mjpegfeed?1000x1080')
     #capture = cv2.VideoCapture(1)
     #capture = cv2.VideoCapture('vid2.mp4')
     count = 0
@@ -100,13 +104,25 @@ def main():
         zbar_image = zbar.Image(width, height, 'Y800', image.tobytes())
         scanner = zbar.ImageScanner()
         scanner.scan(zbar_image)
-        if len(hist)<len(qr_conn):qr_conn = qr_conn[len(qr_conn)-1-(len(qr_conn)-len(hist)):len(qr_conn)-1]
+        frame3=frame
+        if len(hist)<len(qr_conn):
+            qr_conn = qr_conn[len(qr_conn)-1-(len(qr_conn)-len(hist)):len(qr_conn)-1]
         if len(conn)<1:
             cv2.line(frame,(0,0),(0,0) , (30, 90, 235), 1)
         for l in range(len(conn)-1):
             #print('lol  ',tuple(hist[conn[l].data][-1]),tuple(hist[conn[l+1].data][-1]))
-            cv2.line(frame, tuple(hist[conn[l].data][-1]),tuple(hist[conn[l+1].data][-1]) , (30, (90+len(conn)*10)%255, 235), 5)
+            colour = (255, 255, 255)
+            if len(conn) <= 2:
+                colour = (211, 0, 148)
+            elif len(conn) <= 3:
+                colour = (128, 255, 95)
+            elif len(conn) <= 4:
+                colour = (255, 208, 80)
+            elif len(conn) <= 5:
+                colour = (160, 208, 255)
+            cv2.line(frame, tuple(hist[conn[l].data][-1]), tuple(hist[conn[l + 1].data][-1]), colour, 5)
             #cv2.line(frame, tuple(hist[conn[l].data][-1]),tuple(hist[conn[l+1].data][-1]) , (255, 255, 255), 5)
+            print("connn",len(conn))
 
             #if l==len(conn)-1:
                 #cv2.line(frame, tuple(hist[conn[l+1].data][-1]), tuple(hist[conn[0].data][-1]), (30, 90, 235), 5)
@@ -118,13 +134,13 @@ def main():
                 hull = cv2.convexHull(np.array([point for point in points], dtype=np.float32))
                 hull = list(map(tuple, np.squeeze(hull)))
             else:
-                hull = points
+                hull = points;
             n = len(hull)
             #print(hull)
             try:
                 c1 = hull[0][0] + hull[1][0] + hull[2][0] + hull[3][0]
                 c2 = hull[0][1] + hull[1][1] + hull[2][1] + hull[3][1]
-                c1 /= 4
+                c1 /= 4;
                 c2 /= 4
             except:
                 continue
@@ -145,7 +161,7 @@ def main():
         #print ("center:",centres)
 	#needs code for setting an adaptive threshold
 
-            threshold=110 #set an appropriate threshold for distance between finger and QRcentre
+            threshold=120 #set an appropriate threshold for distance between finger and QRcentre
             if(ccc != None):
                 center=ccc
                 #print('yas')
@@ -153,17 +169,23 @@ def main():
                 xa,ya=c1,c2
                 ya=ya
                 xb,yb=center
-                xb=abs(980-xb-40)
+                #xb=abs(980-xb-40)
+                xb=abs(980-xb-200)
                 yb=(yb)
                 cv2.circle(frame,(c1,c2), 5, (255, 0, 255), -1)
                 #cv2.circle(frame,(xa,ya),10,(0, 255,0 ), -1)
 
-                print('c2,c2',c1," ",c2,"xb,yb",xb," ",yb)
-                print("distance:",math.sqrt((xa-xb)**2+(ya-yb)**2))
+                #print('c2,c2',c1," ",c2,"xb,yb",xb," ",yb)
+                #print("distance:",math.sqrt((xa-xb)**2+(ya-yb)**2))
                 if(math.sqrt((xa-xb)**2+(ya-yb)**2)<threshold):
                     cv2.circle(frame,(c1,c2),20,(255, 0,255 ), -1)
 
-                    conn.append(decoded)
+                    try:
+                        if ppp[decoded.data]:
+                            pass
+                    except:
+                        conn.append(decoded)
+                        ppp[decoded.data]=True
                     if (xa,ya) not in qr_conn:
                         qr_conn.append((xa,ya))
                 print(qr_conn)
@@ -218,25 +240,48 @@ def main():
             # print("coordinates")
             # cv2.line(blank_image,(h1,h2),(1500-500-ll[0][0],ll[0][1]),(255,255,255),15)
             try:
+                xa = ll[0][0] + ll[1][0] + ll[2][0] + ll[3][0]
+                ya = ll[0][1] + ll[1][1] + ll[2][1] + ll[3][1]
+                xa /= 4
+                ya /= 4
+            except:
+                pass
+            try:
+                try:
+                    lolol = getangle(hist[decoded.data][2][0], hist[decoded.data][2][1], xa, ya, 1500 - 500 - ll[2][0],
+                                     ll[2][1])
+                except:
+                    lolol = 0
+                if lolol <= 30 or lolol > 330:
+                    rep = (211, 0, 148)
+                elif lolol <= 90:
+                    rep = (0, 255, 0)
+                elif lolol <= 150:
+                    rep = (7, 127, 255)
+                elif lolol <= 210:
+                    rep = (255, 255, 0)
+                elif lolol < 270:
+                    rep = (255, 0, 0)
+                else:
+                    rep = (130, 0, 75)
                 cv2.line(blank_image, (1500 - 500 - ll[0][0], ll[0][1]), (1500 - 500 - ll[1][0], ll[1][1]),
-                         (255, 255, 255), 10)
+                         rep, 10)
                 cv2.line(blank_image, (1500 - 500 - ll[1][0], ll[1][1]), (1500 - 500 - ll[2][0], ll[2][1]),
-                         (255, 255, 255), 10)
+                         rep, 10)
                 cv2.line(blank_image, (1500 - 500 - ll[2][0], ll[2][1]), (1500 - 500 - ll[3][0], ll[3][1]),
-                         (255, 255, 255), 10)
+                         rep, 10)
                 cv2.line(blank_image, (1500 - 500 - ll[3][0], ll[3][1]), (1500 - 500 - ll[0][0], ll[0][1]),
-                         (255, 255, 255), 10)
-
+                         rep, 10)
+                try:
+                    cv2.line(blank_image, (1000-xa, ya), (1000-xa, ya), (180, 105, 255), 30)
+                except:
+                    pass
                 cv2.line(blank_image, (1500 - 500 - ll[2][0], ll[2][1]), (1500 - 500 - ll[2][0], ll[2][1]), (0, 0, 255),
                          25)
             except:
                 continue
-            xa = ll[0][0] + ll[1][0] + ll[2][0] + ll[3][0]
-            ya = ll[0][1] + ll[1][1] + ll[2][1] + ll[3][1]
-            xa /= 4
-            ya /= 4
             try:
-                print(getangle(hist[decoded.data][2][0],hist[decoded.data][2][1],xa,ya,1500 - 500 - ll[2][0], ll[2][1]))
+                print(getangle(hist[decoded.data][2][0],hist[decoded.data][2][1],xa,ya,1500 - 500 - ll[2][0], ll[2][1])%360)
             except:
                 pass
             lx, ly = xa, ya
@@ -254,7 +299,7 @@ def main():
 
                     cv2.line(blank_image, (1500 - 500 - lx, ly),
                              (1500 - 500 - hist[decoded.data][j][0], hist[decoded.data][j][1]),
-                             (100, (30 + hist[decoded.data][j][1] + hist[decoded.data][j][0]) % 254, 255), 5)
+                             (100, 30 , 255), 5)
                     lx = hist[decoded.data][j][0]
                     ly = hist[decoded.data][j][1]
                     # print 'lo', lx, ly
@@ -268,16 +313,26 @@ def main():
                 hist[decoded.data][0] = 0
                 hist[decoded.data][1] = decoded
             except:
-                hist[decoded.data] = [0, decoded,[1500 - 500 - ll[2][0], ll[2][1]] ,[xa, ya]]
+                hist[decoded.data] = [0, decoded, [xa, ya]]
             # print('lenggg',len(hist))
             if len(hist[decoded.data]) > 80:
-                del hist[decoded.data][3]
+                del hist[decoded.data][2]
             for j in arr:
-                cv2.line(blank_image, (1500-500 - j[0], j[1]), (1500-500 - xa, ya), (0, 255, 255), 5)
+                #cv2.line(blank_image, (1500-500 - j[0], j[1]), (1500-500 - xa, ya), (0, 255, 255), 5)#clique
                 dist=math.sqrt((xa-j[0])**2+(ya-j[1])**2)
-                if dist>0.1:
-                    cv2.putText(blank_image, "{0}".format(round(dist,2)), (1500-500-(xa+j[0])/2, (ya+j[1])/2+5 ), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0))
-
+                #if dist>0.1:
+                    #cv2.putText(blank_image, "{0}".format(round(dist,2)), (1500-500-(xa+j[0])/2, (ya+j[1])/2+5 ), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0))
+            for l in range(len(conn)-1):
+                colour = (255, 255, 255)
+                if len(conn) <= 2:
+                    colour = (211, 0, 148)
+                elif len(conn) <= 3:
+                    colour = (128, 255, 95)
+                elif len(conn) <= 4:
+                    colour = (255, 208, 80)
+                elif len(conn) <= 5:
+                    colour = (160, 208, 255)
+                cv2.line(blank_image, (1000-hist[conn[l].data][-1][0],hist[conn[l].data][-1][1]), (1000-hist[conn[l+1].data][-1][0],hist[conn[l+1].data][-1][1]), colour, 5)
 	#print("Centres:",centres)
         count += 1
 #	if(len(arr)>=len(centres)):
@@ -314,30 +369,51 @@ def main():
             # print("coordinates")
             # cv2.line(blank_image,(h1,h2),(1500-500-ll[0][0],ll[0][1]),(255,255,255),15)
             try:
+                xa = ll[0][0] + ll[1][0] + ll[2][0] + ll[3][0]
+                ya = ll[0][1] + ll[1][1] + ll[2][1] + ll[3][1]
+                xa /= 4
+                ya /= 4
+            except:
+                pass
+            try:
+                try:
+                    lolol = getangle(hist[decoded.data][2][0], hist[decoded.data][2][1], xa, ya, 1500 - 500 - ll[2][0],
+                                     ll[2][1])
+                except:
+                    lolol = 0
+                if lolol <= 30 or lolol > 330:
+                    rep = (211, 0, 148)
+                elif lolol <= 90:
+                    rep = (0, 255, 0)
+                elif lolol <= 150:
+                    rep = (7, 127, 255)
+                elif lolol <= 210:
+                    rep = (255, 255, 0)
+                elif lolol < 270:
+                    rep = (255, 0, 0)
+                else:
+                    rep = (130, 0, 75)
                 cv2.line(blank_image, (1500 - 500 - ll[0][0], ll[0][1]), (1500 - 500 - ll[1][0], ll[1][1]),
-                         (255, 255, 255), 10)
+                         rep, 10)
                 cv2.line(blank_image, (1500 - 500 - ll[1][0], ll[1][1]), (1500 - 500 - ll[2][0], ll[2][1]),
-                         (255, 255, 255), 10)
+                         rep, 10)
                 cv2.line(blank_image, (1500 - 500 - ll[2][0], ll[2][1]), (1500 - 500 - ll[3][0], ll[3][1]),
-                         (255, 255, 255), 10)
+                         rep, 10)
                 cv2.line(blank_image, (1500 - 500 - ll[3][0], ll[3][1]), (1500 - 500 - ll[0][0], ll[0][1]),
-                         (255, 255, 255), 10)
-
+                         rep, 10)
+                try:
+                    cv2.line(blank_image, (1000 - xa, ya), (1000 - xa, ya), (180, 105, 255), 30)
+                except:
+                    pass
                 cv2.line(blank_image, (1500 - 500 - ll[2][0], ll[2][1]), (1500 - 500 - ll[2][0], ll[2][1]), (0, 0, 255),
                          25)
             except:
                 continue
-            xa = ll[0][0] + ll[1][0] + ll[2][0] + ll[3][0]
-            ya = ll[0][1] + ll[1][1] + ll[2][1] + ll[3][1]
-            xa /= 4
-            ya /= 4
             try:
-                print(getangle(hist[decoded.data][2][0],hist[decoded.data][2][1],xa,ya,1500 - 500 - ll[2][0], ll[2][1]))
+                print(getangle(hist[decoded.data][2][0], hist[decoded.data][2][1], xa, ya, 1500 - 500 - ll[2][0],
+                               ll[2][1]) % 360)
             except:
                 pass
-
-            # font = cv2.FONT_HERSHEY_SIMPLEX
-            # cv2.putText(blank_image, decoded.data, (xa, ya), font, 2, (255, 255, 255), 2, cv2.LINE_AA)
             lx, ly = xa, ya
             lol = 1
             try:
@@ -366,15 +442,27 @@ def main():
                 hist[decoded.data][0] += 1
                 hist[decoded.data][1] = decoded
             except:
-                hist[decoded.data] = [1, decoded,[1500 - 500 - ll[2][0], ll[2][1]], [xa, ya]]
+                hist[decoded.data] = [1, decoded, [xa, ya]]
             # print('lenggg',len(hist))
             if len(hist[decoded.data]) > 100:
-                del hist[decoded.data][3]
+                del hist[decoded.data][2]
             for j in arr:
-                cv2.line(blank_image, (1500-500 - j[0], j[1]), (1500-500 - xa, ya), (0, 255, 255), 5)
+                #cv2.line(blank_image, (1500-500 - j[0], j[1]), (1500-500 - xa, ya), (0, 255, 255), 5)#clique
+
                 dist=math.sqrt((xa-j[0])**2+(ya-j[1])**2)
-                if dist>0.1:
-                    cv2.putText(blank_image, "{0}".format(round(dist,2)), (1500-500-(xa+j[0])/2, (ya+j[1])/2+5 ), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0))
+                #if dist>0.1:
+                    #cv2.putText(blank_image, "{0}".format(round(dist,2)), (1500-500-(xa+j[0])/2, (ya+j[1])/2+5 ), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0))
+            for l in range(len(conn)-1):
+                colour = (255, 255, 255)
+                if len(conn) <= 2:
+                    colour = (211, 0, 148)
+                elif len(conn) <= 3:
+                    colour = (128, 255, 95)
+                elif len(conn) <= 4:
+                    colour = (255, 208, 80)
+                elif len(conn) <= 5:
+                    colour = (160, 208, 255)
+                cv2.line(blank_image, (1000-hist[conn[l].data][-1][0],hist[conn[l].data][-1][1]), (1000-hist[conn[l+1].data][-1][0],hist[conn[l+1].data][-1][1]), colour, 5)
 
         if count > 4:
             q = []
@@ -438,21 +526,21 @@ def main():
 
                 # ensure there is significant movement in the
                 # x-direction
-                if np.abs(dX) > 20:
-                    dirX = "East" if np.sign(dX) == 1 else "West"
-
-                # ensure there is significant movement in the
-                # y-direction
-                if np.abs(dY) > 20:
-                    dirY = "North" if np.sign(dY) == 1 else "South"
-
-                # handle when both directions are non-empty
-                if dirX != "" and dirY != "":
-                    direction = "{}-{}".format(dirY, dirX)
-
-                # otherwise, only one direction is non-empty
-                else:
-                    direction = dirX if dirX != "" else dirY
+                # if np.abs(dX) > 20:
+                #     dirX = "East" if np.sign(dX) == 1 else "West"
+                #
+                # # ensure there is significant movement in the
+                # # y-direction
+                # if np.abs(dY) > 20:
+                #     dirY = "North" if np.sign(dY) == 1 else "South"
+                #
+                # # handle when both directions are non-empty
+                # if dirX != "" and dirY != "":
+                #     direction = "{}-{}".format(dirY, dirX)
+                #
+                # # otherwise, only one direction is non-empty
+                # else:
+                #     direction = dirX if dirX != "" else dirY
 
             # otherwise, compute the thickness of the line and
             # draw the connecting lines

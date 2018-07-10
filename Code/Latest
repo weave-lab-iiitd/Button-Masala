@@ -8,7 +8,6 @@ import numpy as np
 import  urllib
 import imutils
 from math import atan2
-
 import math
 import random
 from collections import deque
@@ -18,12 +17,12 @@ import argparse
 import cv2
 import imutils
 import time
-def getangle(x1,y1,x2,y2,x3,y3):
-    result = atan2(y3 - y2, x3 - x2) - atan2(y1 - y2, x1 - x2)
-    result = result * 360 / (2 * math.pi)
-    if (result < 0):
-        result += 360
-
+def getangle(x1,y1,x2,y2):
+    print(x1,y1,x2,y2)
+    result = np.degrees(math.atan((((y2-y1)/float(x2-x1))-1)/(1+((y2-y1)/float(x2-x1)))))
+    print("jij",result)
+    if result<0:
+        result+=360
     # a=np.array([x1,y1])
     # b=np.array([x2,y2])
     # c=np.array([x3,y3])
@@ -44,12 +43,8 @@ args = vars(ap.parse_args())
 # and the coordinate deltas
 counter = 0
 pts = deque(maxlen=args["buffer"])
-
 (dX, dY) = (0, 0)
 direction = ""
-
-
-
 def find_centre(points):
 	meanx=0
 	meany=0
@@ -58,15 +53,12 @@ def find_centre(points):
 		meanx+=x
 		meany+=y
 	return (meanx,meany)
-
 def Zoom(objj, size):
     objj = imutils.resize(objj, width=(size * objj.shape[1]))
     point = (objj.shape[0] / 2, objj.shape[1] / 2)
     scll = (point[0] / size, point[1] / size)
     objj = objj[scll[0]:(point[0] + scll[0]), scll[1]:(point[1] + scll[1])]
     return objj
-
-
 def main():
     hist = {}
     q = []
@@ -84,18 +76,16 @@ def main():
     direction = ""
     conn=[]
     counti = 0
-    capture = cv2.VideoCapture('http://192.168.1.33:4745/mjpegfeed?1000x1080')
-    #capture = cv2.VideoCapture(1)
-    #capture = cv2.VideoCapture('vid2.mp4')
+    #capture = cv2.VideoCapture('http://192.168.1.33:4745/mjpegfeed?1000x1080')
+    capture = cv2.VideoCapture(1)
+    #capture = cv2.VideoCapture('QR_3.mov')
     count = 0
     vs=capture
     while True:
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-
         ret, frame = capture.read()
-
-
+        #frame=Zoom(frame,2)
         resize = cv2.resize(frame, (700, 800));
         # cv2.imshow('Current',resize)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -123,10 +113,8 @@ def main():
             cv2.line(frame, tuple(hist[conn[l].data][-1]), tuple(hist[conn[l + 1].data][-1]), colour, 5)
             #cv2.line(frame, tuple(hist[conn[l].data][-1]),tuple(hist[conn[l+1].data][-1]) , (255, 255, 255), 5)
             print("connn",len(conn))
-
             #if l==len(conn)-1:
                 #cv2.line(frame, tuple(hist[conn[l+1].data][-1]), tuple(hist[conn[0].data][-1]), (30, 90, 235), 5)
-
         for decoded in zbar_image:
             points = decoded.location
             #print(decoded.data)
@@ -134,6 +122,7 @@ def main():
                 hull = cv2.convexHull(np.array([point for point in points], dtype=np.float32))
                 hull = list(map(tuple, np.squeeze(hull)))
             else:
+
                 hull = points;
             n = len(hull)
             #print(hull)
@@ -146,7 +135,6 @@ def main():
                 continue
             for j in range(0, n):
                 cv2.line(frame, hull[j], hull[(j + 1) % n], (255, 0, 0), 3)
-
             cv2.line(frame, (c1,c2), (c1,c2), (255, 255, 0), 3)
             # if (math.sqrt((xa - xb) ** 2 + (ya - yb) ** 2) < threshold):
             #     cv2.circle(blank_image, (xa, ya), 20, (0, 255, 0), -1)
@@ -160,7 +148,6 @@ def main():
 #Code For Connecting  QR_Codes.
         #print ("center:",centres)
 	#needs code for setting an adaptive threshold
-
             threshold=120 #set an appropriate threshold for distance between finger and QRcentre
             if(ccc != None):
                 center=ccc
@@ -214,9 +201,6 @@ def main():
                 #     cv2.line(fframe, qr_conn1[len(qr_conn1)-1], center , (0, 255, 255), 5)
                 #     for i in range(0,len(qr_conn1)-1):
                 #         cv2.line(fframe, qr_conn1[i], qr_conn1[i+1] , (0, 255, 255), 5)
-
-
-
         frame = cv2.resize(frame, (800, 800))
         frame2 = frame
         blank_image = np.zeros((height, width, 3), np.uint8)
@@ -229,9 +213,7 @@ def main():
             abra = True
             lll[decoded.data] = True
             points = decoded.location
-
 	    #centresl.append(find_centre(points))
-
             ll = [point for point in points]
             # x1=min(1500-500-ll[0][0],ll[1][0],ll[2][0],ll[3][0])#top-left pt. is the leftmost of the 4 points
             # x2=max(1500-500-ll[0][0],ll[1][0],ll[2][0],ll[3][0])#bottom-right pt. is the rightmost of the 4 points
@@ -248,7 +230,7 @@ def main():
                 pass
             try:
                 try:
-                    lolol = getangle(hist[decoded.data][2][0], hist[decoded.data][2][1], xa, ya, 1500 - 500 - ll[2][0],
+                    lolol = getangle(xa, ya, ll[2][0],
                                      ll[2][1])
                 except:
                     lolol = 0
@@ -281,9 +263,10 @@ def main():
             except:
                 continue
             try:
-                print(getangle(hist[decoded.data][2][0],hist[decoded.data][2][1],xa,ya,1500 - 500 - ll[2][0], ll[2][1])%360)
+                print(getangle(xa,ya,ll[2][0], ll[2][1]))
             except:
-                pass
+                print(getangle(xa,ya, ll[2][0], ll[2][1]))
+
             lx, ly = xa, ya
             lol = 1
             try:
@@ -377,7 +360,7 @@ def main():
                 pass
             try:
                 try:
-                    lolol = getangle(hist[decoded.data][2][0], hist[decoded.data][2][1], xa, ya, 1500 - 500 - ll[2][0],
+                    lolol = getangle( xa, ya, ll[2][0],
                                      ll[2][1])
                 except:
                     lolol = 0
@@ -410,10 +393,11 @@ def main():
             except:
                 continue
             try:
-                print(getangle(hist[decoded.data][2][0], hist[decoded.data][2][1], xa, ya, 1500 - 500 - ll[2][0],
-                               ll[2][1]) % 360)
+                print(getangle( xa, ya,  ll[2][0],
+                               ll[2][1]) )
             except:
-                pass
+                print(getangle(xa,ya, ll[2][0], ll[2][1]))
+
             lx, ly = xa, ya
             lol = 1
             try:

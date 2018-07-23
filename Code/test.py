@@ -152,7 +152,7 @@ def main():
     conn = []
     counti = 0
     # capture = cv2.VideoCapture('http://192.168.1.33:4745/mjpegfeed?1000x1080')
-    capture = cv2.VideoCapture(1)
+    capture = cv2.VideoCapture(0)
     # capture = cv2.VideoCapture('QR_3.mov')
     count = 0
     vs = capture
@@ -186,7 +186,8 @@ def main():
 
             # Draw and display the corners
             img = cv2.drawChessboardCorners(img, (7, 6), corners2, ret)
-    silhoutte = get_silhoutte(gray)
+    	
+    
     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
     while True:
         zbar_image = []
@@ -232,7 +233,8 @@ def main():
         # resize = cv2.resize(frame, (700, 800));
         # cv2.imshow('Current',resize)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        image = Image.fromarray(gray)
+	silhoutte = get_silhoutte(gray)        
+	image = Image.fromarray(gray)
         width, height = image.size
         # zbar_image = zbar.Image(width, height, 'Y800', image.tobytes())
         # scanner = zbar.ImageScanner()

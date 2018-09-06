@@ -1,5 +1,0 @@
-ofxAruco
-ofxCircleMenuButton
-ofxCv
-ofxOpenCv
-ofxPoco

@@ -1,0 +1,7 @@
+ofxAruco
+ofxCv
+ofxImagePlayer
+ofxImageSequence
+ofxImageSequencePlayback
+ofxOpenCv
+ofxPoco
